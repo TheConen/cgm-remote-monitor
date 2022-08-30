@@ -7,7 +7,7 @@ services:
       - ${NS_MONGO_DATA_DIR:-./mongo-data}:/data/db:cached
 
   nightscout:
-    image: nightscout/cgm-remote-monitor:latest
+    image: nightscout:relative
     container_name: nightscout
     restart: always
     depends_on:
@@ -15,9 +15,15 @@ services:
     labels:
       - 'traefik.enable=true'
       # Change the below Host from `localhost` to be the web address where Nightscout is running.
+      # Change the PathPrefix if desired.
       # Also change the email address in the `traefik` service below.
-      - 'traefik.http.routers.nightscout.rule=Host(`localhost`)'
+      - 'traefik.http.routers.nightscout.rule=Host(`localhost`) && PathPrefix(`/nightscout`)'
+      - 'traefik.http.routers.nightscout.middlewares=nightscout-stripprefix'
+      - 'traefik.http.middlewares.nightscout-stripprefix.stripprefix.prefixes=/nightscout'
+      - 'traefik.http.middlewares.nightscout-stripprefix.stripprefix.forceSlash=true'
+      - 'traefik.http.routers.socketio.rule=Host(`localhost`) && PathPrefix(`/socket.io`)'
       - 'traefik.http.routers.nightscout.entrypoints=websecure'
+      - 'traefik.http.routers.nightscout.entrypoints=web'
       - 'traefik.http.routers.nightscout.tls.certresolver=le'
     environment:
       ### Variables for the container
@@ -39,7 +45,7 @@ services:
       MONGO_CONNECTION: mongodb://mongo:27017/nightscout
 
       # API_SECRET - A secret passphrase that must be at least 12 characters long.
-      API_SECRET: change_me
+      API_SECRET: 123456789abc
 
       ### Features
       # ENABLE - Used to enable optional features, expects a space delimited list, such as: careportal rawbg iob
@@ -73,4 +79,4 @@ services:
       - '80:80'
     volumes:
       - './letsencrypt:/letsencrypt'
-      - '/var/run/docker.sock:/var/run/docker.sock:ro'
+      - '//var/run/docker.sock://var/run/docker.sock:ro'
