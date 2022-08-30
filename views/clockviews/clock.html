@@ -47,7 +47,7 @@
     });
 
     var secret = typeof localStorage !== 'undefined' ? localStorage.getItem('apisecrethash') : '';
-    var src = '/api/v1/status.js?t=' + Date.now();
+    var src = 'api/v1/status.js?t=' + Date.now();
 
     if (secret) {
       src += '&secret=' + secret;

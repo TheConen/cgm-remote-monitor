@@ -17,7 +17,7 @@ function send_entry_rest() {
   var options = {
     host: 'localhost',
     port: env.PORT,
-    path: '/api/v1/entries/',
+    path: 'api/v1/entries/',
     method: 'POST',
     headers: {
       'api-secret' : env.api_secret,
