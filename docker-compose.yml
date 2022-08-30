@@ -3,6 +3,7 @@ version: '3'
 services:
   mongo:
     image: mongo:4.4
+    container_name: mongodb
     volumes:
       - ${NS_MONGO_DATA_DIR:-./mongo-data}:/data/db:cached
 
@@ -13,17 +14,17 @@ services:
     depends_on:
       - mongo
     labels:
-      - 'traefik.enable=true'
-      # Change the below Host from `localhost` to be the web address where Nightscout is running.
-      # Change the PathPrefix if desired.
-      # Also change the email address in the `traefik` service below.
-      - 'traefik.http.routers.nightscout.rule=Host(`localhost`) && PathPrefix(`/nightscout`)'
-      - 'traefik.http.routers.nightscout.middlewares=nightscout-stripprefix'
-      - 'traefik.http.middlewares.nightscout-stripprefix.stripprefix.prefixes=/nightscout'
-      - 'traefik.http.middlewares.nightscout-stripprefix.stripprefix.forceSlash=true'
-      - 'traefik.http.routers.socketio.rule=Host(`localhost`) && PathPrefix(`/socket.io`)'
-      - 'traefik.http.routers.nightscout.entrypoints=websecure'
-      - 'traefik.http.routers.nightscout.tls.certresolver=le'
+      # Replace localhost with your domain
+      caddy: localhost
+
+      # If you want to serve nightscout in a subdirectory behind a reverse proxy, uncomment this.
+      # If you want to use a different subdirectory than 'nightscout', replace
+      # 'nightscout' with the name of your desired subdirectory.
+#      caddy.redir: '/nightscout /nightscout/'
+#      caddy.handle_path: '/nightscout/*'
+#      caddy.handle_path.reverse_proxy: '{{upstreams 1337}}'
+#      caddy.handle: '/socket.io*'
+#      caddy.handle.reverse_proxy: '{{upstreams 1337}}'
     environment:
       ### Variables for the container
       NODE_ENV: production
@@ -59,23 +60,13 @@ services:
       # For all other settings, please refer to the Environment section of the README
       # https://github.com/nightscout/cgm-remote-monitor#environment
 
-  traefik:
-    image: traefik:latest
-    container_name: 'traefik'
-    command:
-      - '--providers.docker=true'
-      - '--providers.docker.exposedbydefault=false'
-      - '--entrypoints.web.address=:80'
-      - '--entrypoints.web.http.redirections.entrypoint.to=websecure'
-      - '--entrypoints.websecure.address=:443'
-      - "--certificatesresolvers.le.acme.httpchallenge=true"
-      - "--certificatesresolvers.le.acme.httpchallenge.entrypoint=web"
-      - '--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json'
-      # Change the below to match your email address
-      - '--certificatesresolvers.le.acme.email=example@example.com'
+  caddy:
+    image: lucaslorentz/caddy-docker-proxy:2.7-alpine
+    container_name: caddy
     ports:
-      - '443:443'
       - '80:80'
+      - '443:443'
     volumes:
-      - './letsencrypt:/letsencrypt'
-      - '//var/run/docker.sock://var/run/docker.sock:ro'
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./caddy_data:/data
+    restart: unless-stopped
