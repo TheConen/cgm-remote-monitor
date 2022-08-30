@@ -23,7 +23,6 @@ services:
       - 'traefik.http.middlewares.nightscout-stripprefix.stripprefix.forceSlash=true'
       - 'traefik.http.routers.socketio.rule=Host(`localhost`) && PathPrefix(`/socket.io`)'
       - 'traefik.http.routers.nightscout.entrypoints=websecure'
-      - 'traefik.http.routers.nightscout.entrypoints=web'
       - 'traefik.http.routers.nightscout.tls.certresolver=le'
     environment:
       ### Variables for the container
